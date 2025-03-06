@@ -35,17 +35,20 @@ You are an expert in converting English questions to SQL query! The SQL database
 ]
 
 ## Streamlit App
-st.set_page_config(page_title="Gemini Model")
-st.header("Gemini App To Retrieve SQL Data via Text (NL to SQL)")
-question=st.text_input("Input: ", key="input")
+st.set_page_config(page_title="Gemini Model 2.0 Flash")
+st.header("Gemini App To Retrieve SQL Data via Text (Natural Language to SQL Query)")
+question=st.text_input("Enter your prompt in Natural Language: ", key="input")
 submit=st.button("Ask the question")
 
 ## if submit is clicked
 if submit:
   response=get_gemini_response(question,prompt)
   print(response)
+  st.subheader("NL (Your Prompt) to SQL Query")
+  st.markdown(f'<h5 style="color: green;">{response}</h4>', unsafe_allow_html=True)
   data=read_sql_query(response,"student.db")
-  st.subheader("The Response is")
+  st.markdown('<hr >', unsafe_allow_html=True)
+  st.subheader("The Response from Database via SQL Query")
   for row in data:
     print(row)
-    st.header(row)
+    st.markdown(f'<h5 style="color: green;">{row}</h4>', unsafe_allow_html=True)
