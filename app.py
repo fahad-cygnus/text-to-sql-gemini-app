@@ -35,8 +35,8 @@ You are an expert in converting English questions to SQL query! The SQL database
 ]
 
 ## Streamlit App
-st.set_page_config(page_title="I can Retrieve Any SQL query")
-st.header("Gemini App To Retrieve SQL Data")
+st.set_page_config(page_title="Gemini Model")
+st.header("Gemini App To Retrieve SQL Data via Text (NL to SQL)")
 question=st.text_input("Input: ", key="input")
 submit=st.button("Ask the question")
 
