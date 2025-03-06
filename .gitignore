@@ -1,2 +1,11 @@
+# Env files and extra
 .env
 student.db
+
+# Python cache files
+__pycache__/
+
+# Other entries can go here
+*.pyc
+*.pyo
+*.pyd

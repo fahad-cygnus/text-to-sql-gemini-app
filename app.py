@@ -3,52 +3,84 @@ load_dotenv() ## load all the environment variables
 
 import streamlit as st
 import os
-import sqlite3
+from services.ai_models_services.gemini import get_gemini_response
+from services.ai_models_services.llama import get_llama_response
+from services.database_services.database import read_sql_query, get_all_students
+
 import google.generativeai as genai
 
-## Configure our API Key
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+# Streamlit App
+st.set_page_config(page_title="Cygnus LLM APP", layout="wide")
+st.header("AI Model App To Retrieve SQL Data via Text (Natural Language to SQL Query)")
 
-## Function to Load Google Gemini Model and provide SQL Query as response
-def get_gemini_response(question,prompt):
-  model=genai.GenerativeModel('gemini-2.0-flash')
-  response=model.generate_content([prompt[0], question])
-  return response.text
+# Add custom CSS to reduce padding
+st.markdown(
+    """
+    <style>
+    .reportview-container {
+        padding-left: 0rem;
+        padding-right: 0rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-## Function to retrieve query from the SQL Database
-def read_sql_query(sql,db):
-  conn=sqlite3.connect(db)
-  cur=conn.cursor()
-  cur.execute(sql)
-  rows=cur.fetchall()
-  conn.commit()
-  conn.close()
-  for row in rows:
-    print(row)
-  return rows
+# Create two columns
+col1, col2 = st.columns(2)
 
-## Define your Prompt
-prompt=[
-   """
-You are an expert in converting English questions to SQL query! The SQL database has the name STUDENT and has the following colums - NAME, CLASS, SECTION and MARKS \n\nFor example, \nExample 1 - How many entries of records are present?, the SQL command will be something like this SELECT COUNT(*) FROM STUDENT ; \nExample 2 - Tell me all the students studying in Data Science class?, the SQL command will be something like this SELECT * FROM STUDENT where CLASS="Data Science"; also the sql code shoud not have ``` in beginning or end and sql word in the output
-   """
-]
+# Column 1: Input and Student List
+with col1:
+    # Dropdown to select AI model
+    model_choice = st.selectbox("Choose AI Model:", ["Gemini", "Llama"])
 
-## Streamlit App
-st.set_page_config(page_title="Gemini Model 2.0 Flash")
-st.header("Gemini App To Retrieve SQL Data via Text (Natural Language to SQL Query)")
-question=st.text_input("Enter your prompt in Natural Language: ", key="input")
-submit=st.button("Ask the question")
+    # Get all students and display them
+    all_students = get_all_students("student.db")
+    st.subheader("Students Detail From Database:")
+    if all_students:
+        st.markdown("<ul>", unsafe_allow_html=True)  # Start unordered list
+        for student in all_students:
+            st.markdown(f"<li>{student}</li>", unsafe_allow_html=True)  # Add each student as a list item
+        st.markdown("</ul>", unsafe_allow_html=True)  # End unordered list
 
-## if submit is clicked
-if submit:
-  response=get_gemini_response(question,prompt)
-  print(response)
-  st.subheader("NL (Your Prompt) to SQL Query")
-  st.markdown(f'<h5 style="color: green;">{response}</h4>', unsafe_allow_html=True)
-  data=read_sql_query(response,"student.db")
-  st.markdown('<hr >', unsafe_allow_html=True)
-  st.subheader("The Response from Database via SQL Query")
-  for row in data:
-    print(row)
-    st.markdown(f'<h5 style="color: green;">{row}</h4>', unsafe_allow_html=True)
+    st.markdown('<hr>', unsafe_allow_html=True)
+
+    question = st.text_input("Enter your prompt in Natural Language: ", key="input")
+    submit = st.button("Ask the question")
+
+# Column 2: Results
+with col2:
+    st.subheader("Prompt Result:")
+    
+    # Configure API Key based on selected model
+    if model_choice == "Gemini":
+        genai.configure(api_key=os.getenv("GOOGLE_API_KEY_GEMINI"))
+
+    ## Define your Prompt
+    prompt = [
+        """
+        You are an expert in converting English questions to SQL query! The SQL database has the name STUDENT and has the following columns - NAME, CLASS, SECTION and MARKS \n\nFor example, \nExample 1 - How many entries of records are present?, the SQL command will be something like this SELECT COUNT(*) FROM STUDENT ; \nExample 2 - Tell me all the students studying in Data Science class?, the SQL command will be something like this SELECT * FROM STUDENT where CLASS="Data Science"; also the sql code should not have ``` in beginning or end and sql word in the output
+        """
+    ]
+
+    ## if submit is clicked
+    if submit:
+        if model_choice == "Gemini":
+            response = get_gemini_response(question, prompt)
+        else:
+            response = get_llama_response(question, prompt)
+
+        print(response)
+        
+        if model_choice == "Gemini":
+            st.subheader("Natural Language (Your Prompt) to SQL Query")
+            st.markdown(f'<h5 style="color: green;">{response}</h5>', unsafe_allow_html=True)
+            data = read_sql_query(response, "student.db")
+            st.markdown('<hr>', unsafe_allow_html=True)
+            st.subheader(f'The Response from Database (SQLite) via SQL Query (Generated By AI Model: {model_choice})')
+            for row in data:
+                print(row)
+                st.markdown(f'<h5 style="color: green;">{row}</h5>', unsafe_allow_html=True)
+        else:
+            st.markdown('<hr>', unsafe_allow_html=True)
+            st.markdown(f'<h5 style="color: red;">{response}</h5>', unsafe_allow_html=True)
