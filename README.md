@@ -2,6 +2,9 @@
 
 This project is a Streamlit application that utilizes the Google Gemini model to convert English questions into SQL queries. It retrieves data from a SQLite database based on the generated SQL queries.
 
+## Application Screenshot
+![Screenshot 2025-03-10 121730](https://github.com/user-attachments/assets/6c158bb1-4de8-42a1-b385-df0b7f278301)
+
 ## Table of Contents
 - [Prerequisites](#prerequisites)
 - [Setup Instructions](#setup-instructions)
